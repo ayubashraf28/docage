@@ -1,0 +1,19 @@
+# Render Blueprint: New > Blueprint > pick this repo
+services:
+  - type: web
+    name: docage
+    runtime: python
+    region: singapore          # same region as the Supabase database, close to Hyderabad
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SUPABASE_URL
+        value: https://sdxsnhsehvnrodunvmmg.supabase.co
+      - key: SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_RYv0Xfs2hjYu7IaBSeyBmQ_r_YxfCkI
+      - key: DATABASE_URL
+        sync: false            # secret: Render asks for it during setup

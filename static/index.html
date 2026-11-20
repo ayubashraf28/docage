@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DocAge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── Organic design-system tokens (from DocAge mockups) ───────────────── */
+:root {
+  --color-bg:#f5ead8; --color-surface:#ebddc5; --color-text:#201e1d;
+  --color-accent:#c67139; --color-accent-2:#7a8a5e;
+  --color-divider:color-mix(in srgb,#201e1d 16%,transparent);
+  --color-neutral-100:#f9f4ed; --color-neutral-200:#eee7db; --color-neutral-300:#dcd3c4; --color-neutral-400:#c0b6a5;
+  --color-neutral-500:#a19786; --color-neutral-600:#82796a; --color-neutral-700:#645c50; --color-neutral-800:#474238; --color-neutral-900:#2e2b25;
+  --color-accent-100:#fff2eb; --color-accent-200:#ffe1d0; --color-accent-300:#ffc6a5; --color-accent-500:#d67f48;
+  --color-accent-600:#b2622d; --color-accent-700:#8c491a; --color-accent-800:#643312;
+  --color-accent-2-100:#f0fae1; --color-accent-2-200:#e1eecc; --color-accent-2-300:#ccdbb2;
+  --color-accent-2-600:#728157; --color-accent-2-700:#56633f; --color-accent-2-800:#3d472b;
+  --font-heading:"Caprasimo",system-ui,sans-serif; --font-body:"Figtree",system-ui,sans-serif;
+  --shadow-sm:0 1px 2px color-mix(in srgb,#2e2b25 14%,transparent);
+  --shadow-md:0 3px 10px color-mix(in srgb,#2e2b25 16%,transparent);
+  --shadow-lg:0 12px 32px color-mix(in srgb,#2e2b25 22%,transparent);
+  --danger:#a3361f;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:15px;line-height:1.55}
+h1,h2,h3,h4{font-family:var(--font-heading);font-weight:400;line-height:1.12;letter-spacing:-.015em;margin:0}
+p{margin:0}
+a{color:var(--color-accent-700);text-underline-offset:3px;cursor:pointer}
+a:hover{color:var(--color-accent-800)}
+.text-muted{color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+:focus{outline:none} :focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+.hidden{display:none!important}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;text-decoration:none;
+  font-family:var(--font-heading);font-size:15px;line-height:1.2;color:var(--color-text);background:transparent;
+  border:1px solid transparent;padding:9px 18px;border-radius:999px;min-height:42px;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--color-accent);color:var(--color-bg)}
+.btn-primary:hover:not(:disabled){background:var(--color-accent-600)}
+.btn-primary:active:not(:disabled){background:var(--color-accent-700)}
+.btn-secondary{border-color:var(--color-divider)}
+.btn-secondary:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.btn-ghost{color:var(--color-accent-700);padding-inline:10px}
+.btn-ghost:hover{background:color-mix(in srgb,var(--color-accent) 10%,transparent)}
+.btn-icon{width:40px;height:40px;min-height:0;padding:0;border-radius:50%}
+.btn-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.btn svg{display:block;flex:none}
+
+/* forms */
+.field>label,.label{display:block;font-size:12px;margin-bottom:5px;color:color-mix(in srgb,var(--color-text) 70%,transparent)}
+.input{width:100%;min-height:42px;padding:6px 14px;font:inherit;font-size:14px;color:var(--color-text);caret-color:var(--color-accent);
+  background:var(--color-neutral-100);border:1px solid var(--color-divider);border-radius:999px}
+.input:hover{border-color:color-mix(in srgb,var(--color-text) 45%,transparent)}
+.input:focus-visible{border-color:var(--color-accent);outline-offset:0}
+.input[readonly]{background:var(--color-neutral-200);color:var(--color-neutral-700)}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23201e1d' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.check{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;user-select:none}
+.check input{position:absolute;opacity:0;width:0;height:0}
+.check .dot{width:16px;height:16px;flex:none;border-radius:50%;border:1.5px solid var(--color-divider)}
+.check:hover .dot{border-color:var(--color-accent)}
+.check input:checked+.dot{border-color:var(--color-accent);background:var(--color-accent);box-shadow:inset 0 0 0 4px var(--color-bg)}
+.check input:focus-visible+.dot{outline:2px solid var(--color-accent);outline-offset:2px}
+
+/* tags */
+.tag{display:inline-flex;align-items:center;font-size:11.5px;letter-spacing:.02em;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.tag-accent{background:var(--color-accent-100);color:var(--color-accent-800)}
+.tag-accent-2{background:var(--color-accent-2-100);color:var(--color-accent-2-800)}
+.tag-neutral{background:var(--color-neutral-200);color:var(--color-neutral-800)}
+.tag-outline{border:1px solid var(--color-accent);color:var(--color-accent-700)}
+.chip{cursor:pointer;padding:6px 14px;font-size:13px;border:1px solid var(--color-divider);background:var(--color-neutral-100);color:var(--color-neutral-800);border-radius:999px;font-family:var(--font-body)}
+.chip[aria-pressed="true"]{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)}
+
+/* brand */
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:34px;height:34px;border-radius:50%;background:var(--color-accent);display:grid;place-items:center;flex:none}
+.brand-name{font-family:var(--font-heading);font-size:21px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--color-accent-200);color:var(--color-accent-800);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+
+/* ── Login (1a / 2a) ─────────────────────────────────────────────────── */
+.login{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-hero{position:relative;overflow:hidden;background:var(--color-accent-2-700);color:var(--color-neutral-100);padding:48px 56px;display:flex;flex-direction:column}
+.blob{position:absolute;border-radius:50%}
+.login-hero .b1{width:520px;height:520px;background:var(--color-accent-2-600);right:-160px;bottom:-180px}
+.login-hero .b2{width:220px;height:220px;background:var(--color-accent-500);right:150px;bottom:190px}
+.login-hero .b3{width:90px;height:90px;background:var(--color-accent-2-300);right:70px;bottom:400px}
+.login-hero .brand{position:relative}
+.login-hero .brand-mark{width:36px;height:36px}
+.login-hero .brand-name{font-size:22px}
+.login-copy{position:relative;margin-top:auto;max-width:440px}
+.login-copy h1{font-size:52px;line-height:1.05;margin:0 0 18px;color:var(--color-neutral-100);text-wrap:pretty}
+.login-copy p{font-size:17px;line-height:1.55;color:var(--color-accent-2-100);text-wrap:pretty}
+.login-form-wrap{display:flex;flex-direction:column;justify-content:center;padding:40px 88px}
+.login-form{max-width:380px;width:100%;display:flex;flex-direction:column;gap:18px}
+.login-form h2{font-size:36px}
+.login-form .input{min-height:46px;font-size:15px}
+.status{font-size:14px;min-height:0}
+.status.err{color:var(--danger)} .status.ok{color:var(--color-accent-2-700)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--color-neutral-300);border-top-color:var(--color-accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Main (1b / 2b) ──────────────────────────────────────────────────── */
+.app-header{display:flex;align-items:center;gap:16px;padding:18px 40px;max-width:1280px;margin:0 auto}
+.app-header .brand{margin-right:auto}
+.user-btn{display:flex;align-items:center;gap:10px;background:none;border:0;font:inherit;font-size:14px;color:inherit;cursor:pointer;padding:4px 8px 4px 4px;border-radius:999px}
+.user-btn:hover{background:color-mix(in srgb,var(--color-text) 6%,transparent)}
+main.app{max-width:1280px;margin:0 auto;padding:8px 40px 48px;display:flex;flex-direction:column;gap:22px}
+.panel{background:var(--color-surface);border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.panel-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.step{width:28px;height:28px;border-radius:50%;background:var(--color-accent);color:var(--color-bg);display:grid;place-items:center;font-family:var(--font-heading);font-size:14px;flex:none}
+.panel-head h4{font-size:20px}
+.top-grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:22px}
+
+.drop{flex:1;min-height:150px;border:2px dashed var(--color-neutral-400);border-radius:28px;background:var(--color-neutral-100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;cursor:pointer;font:inherit;color:inherit;width:100%}
+.drop.over{border-color:var(--color-accent);background:var(--color-accent-100)}
+.drop-icon{width:48px;height:48px;border-radius:50%;background:var(--color-accent-100);display:grid;place-items:center}
+.progress{display:flex;flex-direction:column;gap:8px}
+.bar{height:10px;border-radius:999px;background:var(--color-neutral-300);overflow:hidden}
+.bar>span{display:block;height:100%;width:0;background:var(--color-accent);border-radius:999px;transition:width .4s ease}
+.progress-meta{display:flex;justify-content:space-between;font-size:13px;gap:10px}
+
+.doc-row{display:flex;align-items:center;gap:18px;background:var(--color-neutral-100);border-radius:24px;padding:16px 18px}
+.doc-icon{width:44px;height:44px;border-radius:14px;background:var(--color-accent-2-200);display:grid;place-items:center;flex:none}
+.doc-grid{flex:1;min-width:0;display:grid;grid-template-columns:1.3fr 1fr .6fr 1.3fr 1.2fr;gap:14px;align-items:center}
+.doc-grid>div{min-width:0}
+.doc-col>div:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k{font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.doc-sub{display:none}
+.doc-actions{display:flex;align-items:center;gap:4px}
+.empty{background:var(--color-neutral-100);border-radius:24px;padding:22px;text-align:center;font-size:14px}
+
+.search-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px}
+.more-toggle{display:none}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+
+.results{background:var(--color-neutral-100);border-radius:32px;padding:28px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow-sm)}
+.results-head{display:flex;align-items:flex-end;gap:16px}
+.results-head>div{margin-right:auto}
+.results-head h3{font-size:25px;margin-bottom:4px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.table-wrap{overflow-x:auto}
+table.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--color-text) 60%,transparent);padding:9px;border-bottom:1px solid var(--color-divider);font-weight:600}
+.table td{padding:10px 9px;border-bottom:1px solid color-mix(in srgb,var(--color-text) 8%,transparent);vertical-align:top}
+.table tbody tr:hover{background:color-mix(in srgb,var(--color-text) 4%,transparent)}
+.table tr.flash td{animation:flash 1.6s ease}
+@keyframes flash{0%,40%{background:var(--color-accent-200)}100%{background:transparent}}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cards{display:none;flex-direction:column;gap:12px}
+.entry-card{background:#fffaf4;border-radius:24px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm)}
+.entry-card.flash{animation:flash 1.6s ease}
+.entry-foot{display:flex;gap:14px;font-size:12px;color:var(--color-neutral-700);padding-top:8px;border-top:1px solid var(--color-divider);flex-wrap:wrap}
+.sticky-dl{display:none}
+
+.doc-grid .doc-col{display:none}.doc-grid{display:block}.doc-sub{display:block}
+
+/* ── Profile dialog ──────────────────────────────────────────────────── */
+.dialog-backdrop{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:18px;background:color-mix(in srgb,var(--color-neutral-900) 50%,transparent)}
+.dialog{width:min(460px,100%);max-height:calc(100dvh - 36px);overflow:auto;display:flex;flex-direction:column;gap:18px;padding:28px;border-radius:32px;background:var(--color-bg);box-shadow:var(--shadow-lg)}
+.dialog.wide{width:min(900px,100%);padding:36px;gap:24px}
+.profile-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.profile-col{display:flex;flex-direction:column;gap:20px}
+.dialog.wide .dialog-top .avatar{width:72px;height:72px;font-size:24px}
+.dialog.wide .dialog-top h3{font-size:30px}
+.dialog.wide .dialog-top p{font-size:15px!important}
+.dialog.wide section{padding:24px;gap:14px}
+.dialog.wide .input{min-height:46px;font-size:15px}
+.dialog.wide .field>label{font-size:13px}
+.confirm-box{width:min(440px,100%)}
+.confirm-box h3{font-size:24px}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.doc-row.removing{opacity:.45;pointer-events:none;transition:opacity .2s}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;background:var(--color-neutral-900);color:var(--color-neutral-100);padding:12px 20px;border-radius:999px;font-size:14px;box-shadow:var(--shadow-lg)}
+.dialog-top{display:flex;align-items:center;gap:14px}
+.dialog-top .avatar{width:56px;height:56px;font-size:19px}
+.dialog-top h3{font-size:24px}
+.dialog section{background:var(--color-surface);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.dialog section h5{font:600 12px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-700);margin:0}
+
+/* ── Mobile (2a / 2b) ────────────────────────────────────────────────── */
+@media (max-width:760px){
+  body{font-size:15px}
+  .login{display:flex;flex-direction:column}
+  .login-hero{padding:48px 28px 36px;border-radius:0 0 40px 40px}
+  .login-hero .b1{width:260px;height:260px;right:-90px;top:-70px;bottom:auto}
+  .login-hero .b2{width:90px;height:90px;right:40px;top:120px;bottom:auto}
+  .login-hero .b3{display:none}
+  .login-hero .brand{margin-bottom:40px}
+  .login-copy{margin-top:0}
+  .login-copy h1{font-size:32px;line-height:1.08;margin-bottom:10px;max-width:260px}
+  .login-copy p{font-size:14px;max-width:300px}
+  .login-form-wrap{padding:32px 28px;justify-content:flex-start;flex:1}
+  .login-form{max-width:none;gap:16px}
+  .login-form h2{font-size:26px}
+  .login-form .input{min-height:48px;font-size:16px}
+  .login-form .btn-primary{min-height:52px}
+
+  .app-header{padding:calc(14px + env(safe-area-inset-top)) 20px 12px}
+  .app-header .brand-mark{width:32px;height:32px}
+  .app-header .brand-name{font-size:19px}
+  .user-name,#logout-top{display:none}
+  .user-btn .avatar{width:44px;height:44px}
+  main.app{padding:6px 14px 110px;gap:14px}
+  .panel{border-radius:28px;padding:20px;gap:12px}
+  .panel-head h4{font-size:18px}
+  .step{width:26px;height:26px;font-size:13px}
+  .top-grid{grid-template-columns:1fr;gap:14px}
+  .drop{min-height:64px;flex-direction:row;padding:14px;border-radius:22px;font-weight:600}
+  .drop-icon{width:auto;height:auto;background:none}
+  .drop .drop-desk{display:none}
+  .doc-row{gap:10px;padding:12px 10px 12px 14px;border-radius:20px}
+  .doc-icon,.doc-grid .doc-col{display:none}
+  .doc-grid{display:block}
+  .doc-sub{display:block}
+  .search-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .search-grid .f-party{grid-column:1/-1}
+  .search-grid .f-more{display:none}
+  .search-grid.open .f-more{display:block}
+  .search-grid .f-more.f-wide{grid-column:1/-1}
+  .search-grid .input{min-height:46px;font-size:16px}
+  .more-toggle{display:flex;justify-content:space-between;font-family:var(--font-body);font-size:14px;font-weight:600;padding-inline:16px;min-height:44px;width:100%}
+  .btn-row{display:grid;grid-template-columns:2fr 1fr}
+  .btn-row .btn{min-height:50px;font-size:16px}
+  .results{background:none;box-shadow:none;padding:8px 6px 0;border-radius:0;gap:10px}
+  .results-head .btn{display:none}
+  .results-head h3{font-size:24px}
+  .table-wrap{display:none}
+  .cards{display:flex}
+  .chip{padding:8px 14px}
+  .sticky-dl{display:block;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:12px 16px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--color-bg) 70%,transparent)}
+  .sticky-dl .btn{width:100%;min-height:52px;font-size:16px}
+  .dialog-backdrop{align-items:end;padding:0}
+  .profile-grid{grid-template-columns:1fr;gap:14px}
+  .profile-col{gap:14px}
+  .dialog.wide{padding:24px 20px calc(24px + env(safe-area-inset-bottom));gap:18px}
+  .dialog.wide .dialog-top .avatar{width:56px;height:56px;font-size:19px}
+  .dialog.wide .dialog-top h3{font-size:24px}
+  .dialog.wide section{padding:18px}
+  .dialog.wide .input{min-height:48px;font-size:16px}
+  .toast{bottom:96px;max-width:calc(100% - 32px);text-align:center}
+  .dialog{width:100%;border-radius:32px 32px 0 0;max-height:92dvh;padding:24px 20px calc(24px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h6"/><path d="M9 15h6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h6"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+</svg>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-view" class="login hidden">
+  <div class="login-hero">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+    <div class="brand">
+      <div class="brand-mark"><svg width="18" height="18" fill="none" stroke="#f5ead8" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></div>
+      <span class="brand-name">DocAge</span>
+    </div>
+    <div class="login-copy">
+      <h1>Reads your documents. Gives you answers.</h1>
+      <p>Upload a statement and DocAge reads every page and finds the entries you need, ready to export as a report.</p>
+    </div>
+  </div>
+  <div class="login-form-wrap">
+    <form id="login-form" class="login-form" novalidate>
+      <div>
+        <h2>Welcome back</h2>
+        <p class="text-muted" style="margin-top:8px">Sign in to your workspace to continue.</p>
+      </div>
+      <div class="field"><label for="email">Email</label><input id="email" class="input" type="email" autocomplete="username" required></div>
+      <div class="field">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><label for="password">Password</label><a id="forgot" style="font-size:12px">Forgot password?</a></div>
+        <input id="password" class="input" type="password" autocomplete="current-password" required>
+      </div>
+      <label class="check"><input type="checkbox" id="remember" checked><span class="dot"></span>Keep me signed in</label>
+      <button class="btn btn-primary" type="submit" style="min-height:48px;font-size:16px;margin-top:6px">Sign in</button>
+      <div id="login-status" class="status"></div>
+      <p class="text-muted" style="font-size:13px;margin-top:14px">Need an account? Ask your administrator for access.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="app-view" class="hidden">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark"><svg width="17" height="17" fill="none" stroke="#f5ead8" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-doc"/></svg></div>
+      <span class="brand-name">DocAge</span>
+    </div>
+    <span id="dev-tag" class="tag tag-accent-2 hidden" style="padding:5px 12px">Dev mode</span>
+    <button class="user-btn" id="open-profile" aria-label="Profile and settings"><span class="avatar" id="avatar">?</span><span class="user-name" id="user-name"></span></button>
+    <button class="btn btn-secondary" id="logout-top">Log out</button>
+  </header>
+
+  <main class="app">
+    <div class="top-grid">
+      <!-- Upload -->
+      <section class="panel">
+        <div class="panel-head"><span class="step">1</span><h4>Upload a statement</h4></div>
+        <button class="drop" id="drop" type="button">
+          <span class="drop-icon"><svg width="22" height="22" fill="none" stroke="var(--color-accent-700)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-upload"/></svg></span>
+          <span class="drop-desk" style="font-size:14px;font-weight:400">Drop a PDF here or <a style="font-weight:600">choose a file</a></span>
+          <span class="drop-mob" style="display:none">Choose a PDF</span>
+        </button>
+        <input type="file" id="file" accept=".pdf,application/pdf" class="hidden">
+        <div id="progress" class="progress hidden">
+          <div class="progress-meta"><span id="progress-label">Uploading</span><span class="text-muted" id="progress-time"></span></div>
+          <div class="bar"><span id="progress-bar"></span></div>
+          <div class="text-muted" id="progress-file" style="font-size:12px"></div>
+        </div>
+        <div id="upload-status" class="status"></div>
+      </section>
+
+      <!-- Statements -->
+      <section class="panel">
+        <div class="panel-head" style="justify-content:space-between"><h4>Uploaded statements</h4><span class="text-muted" id="doc-count" style="font-size:13px"></span></div>
+        <div id="docs" style="display:flex;flex-direction:column;gap:10px"><div class="empty text-muted"><span class="spinner"></span>Loading statements…</div></div>
+        <p class="text-muted" id="doc-last" style="font-size:12px"></p>
+      </section>
+    </div>
+
+    <!-- Search -->
+    <section class="panel">
+      <div class="panel-head"><span class="step">2</span><h4>Search</h4><span class="text-muted" style="font-size:13px;margin-left:8px">Any combination works. Party names can be partial.</span></div>
+      <form id="search-form" style="display:flex;flex-direction:column;gap:16px">
+        <div class="search-grid" id="search-grid">
+          <div class="field"><label>Plot no.</label><input class="input" name="plot" placeholder="Plot no." inputmode="text"></div>
+          <div class="field"><label>Survey no.</label><input class="input" name="survey" placeholder="Survey no." inputmode="numeric"></div>
+          <div class="field f-party"><label>Party name</label><input class="input" name="party" placeholder="Party name"></div>
+          <div class="field f-more f-wide"><label>Layout / colony</label><input class="input" name="layout" placeholder="Layout / colony"></div>
+          <div class="field f-more f-wide"><label>Deed type</label>
+            <select class="input" name="deed_category">
+              <option value="">Any</option><option value="sale">Sale deed</option><option value="gpa">Agreement of sale cum GPA</option>
+              <option value="mortgage">Mortgage</option><option value="release">Release</option><option value="gift">Gift</option>
+              <option value="settlement">Settlement</option><option value="rectification">Rectification</option>
+              <option value="lease">Lease</option><option value="revocation">Revocation</option><option value="cancellation">Cancellation</option>
+            </select></div>
+          <div class="field f-more"><label>From</label><input class="input" type="date" name="date_from"></div>
+          <div class="field f-more"><label>To</label><input class="input" type="date" name="date_to"></div>
+          <div class="field f-more f-wide"><label>Statement</label><select class="input" name="document_id" id="doc-filter"><option value="">All uploaded</option></select></div>
+        </div>
+        <button type="button" class="btn btn-secondary more-toggle" id="more-toggle">More filters<span class="text-muted" style="font-weight:400" id="more-hint">Layout, deed, dates</span></button>
+        <div class="btn-row">
+          <button class="btn btn-primary" type="submit" style="padding-inline:26px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-search"/></svg>Search</button>
+          <button class="btn btn-secondary" type="reset" style="padding-inline:22px">Clear</button>
+        </div>
+      </form>
+      <div id="search-status" class="status"></div>
+    </section>
+
+    <!-- Results -->
+    <section class="results hidden" id="results-card">
+      <div class="results-head">
+        <div><h3 id="results-title">Results</h3><p class="text-muted" id="results-sub" style="font-size:13px"></p></div>
+        <button class="btn btn-primary dl-btn" style="padding-inline:22px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>Download Word report</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>EC Sl.</th><th>Reg. date</th><th>Deed</th><th>Doc no.</th><th>Plot / extent</th><th style="width:26%">Executant(s)</th><th>Claimant(s)</th><th class="num">Market value</th><th class="num">Consideration</th><th>Link doc</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="cards" id="cards"></div>
+      <button class="btn btn-ghost hidden" id="show-more" style="align-self:flex-start"></button>
+    </section>
+  </main>
+
+  <div class="sticky-dl hidden" id="sticky-dl">
+    <button class="btn btn-primary dl-btn"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-download"/></svg>Download Word report</button>
+  </div>
+</div>
+
+<!-- ═══ PROFILE & SETTINGS ═══ -->
+<div class="dialog-backdrop hidden" id="profile" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+  <div class="dialog wide">
+    <div class="dialog-top">
+      <span class="avatar" id="p-avatar">?</span>
+      <div style="flex:1;min-width:0"><h3 id="profile-title">Profile &amp; settings</h3><p class="text-muted" id="p-email" style="font-size:13px;overflow:hidden;text-overflow:ellipsis"></p></div>
+      <button class="btn btn-ghost btn-icon" id="close-profile" aria-label="Close"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><use href="#i-x"/></svg></button>
+    </div>
+    <p id="p-dev" class="text-muted hidden" style="font-size:13px">Dev mode: profile settings are disabled while running without a login.</p>
+    <div class="profile-grid">
+      <div class="profile-col">
+        <section>
+          <h5>Profile</h5>
+          <div class="field"><label for="p-name">Display name</label><input id="p-name" class="input" placeholder="e.g. R. Kumar" autocomplete="name"></div>
+          <div class="field"><label>Email</label><input id="p-email-input" class="input" readonly></div>
+          <button class="btn btn-primary" id="save-name" style="align-self:flex-start">Save name</button>
+          <div class="status" id="name-status"></div>
+        </section>
+        <section>
+          <h5>Session</h5>
+          <label class="check"><input type="checkbox" id="p-remember"><span class="dot"></span>Keep me signed in on this device</label>
+          <button class="btn btn-danger btn-secondary" id="logout" style="align-self:flex-start">Log out</button>
+        </section>
+      </div>
+      <section id="pw-section">
+        <h5>Change password</h5>
+        <p class="text-muted" id="pw-hint" style="font-size:13px">Enter your current password, then choose a new one of at least 8 characters.</p>
+        <div class="field" id="pw0-field"><label for="p-pw0">Current password</label><input id="p-pw0" class="input" type="password" autocomplete="current-password"></div>
+        <div class="field"><label for="p-pw1">New password</label><input id="p-pw1" class="input" type="password" autocomplete="new-password"></div>
+        <div class="field"><label for="p-pw2">Confirm new password</label><input id="p-pw2" class="input" type="password" autocomplete="new-password"></div>
+        <button class="btn btn-primary" id="save-pw" style="align-self:flex-start">Update password</button>
+        <div class="status" id="pw-status"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM ═══ -->
+<div class="dialog-backdrop hidden" id="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="dialog confirm-box">
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-body" style="font-size:15px"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-primary" id="confirm-ok" style="background:var(--danger)">Delete</button>
+    </div>
+  </div>
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const PAGE = 10;
+let sb = null, token = null, devMode = false, user = null;
+let recoveryMode = false, lastQuery = null, results = [], activeLayout = null, shown = PAGE, docsCache = [];
+
+/* ── helpers ── */
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const rupees = (v) => v == null ? "—" : "₹" + Number(v).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const niceDate = (s) => { const m = /^(\d\d)-(\d\d)-(\d{4})$/.exec(s || ""); return m ? `${m[1]} ${MON[+m[2]-1]} ${m[3]}` : (s || ""); };
+const isoNice = (s) => { if (!s) return ""; const d = new Date(s); return `${MON[d.getMonth()]} ${d.getFullYear()}`; };
+const title = (s) => String(s || "").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+const initials = (name) => (name || "?").replace(/@.*/, "").split(/[\s._-]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+function setStatus(el, html, cls = "") { el.className = "status " + cls; el.innerHTML = html; }
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {});
+  if (token) headers.Authorization = "Bearer " + token;
+  const res = await fetch(path, Object.assign({}, opts, { headers }));
+  if (res.status === 401 && !devMode) { await signOut(); throw new Error("Your session ended. Please sign in again."); }
+  if (!res.ok) { let msg = res.statusText; try { msg = (await res.json()).detail || msg; } catch {} throw new Error(msg); }
+  return res;
+}
+
+/* "Keep me signed in": session lives in localStorage when ticked, sessionStorage otherwise */
+const REMEMBER_KEY = "docage_remember";
+const remember = () => { try { return localStorage.getItem(REMEMBER_KEY) !== "0"; } catch { return true; } };
+const setRemember = (v) => { try { localStorage.setItem(REMEMBER_KEY, v ? "1" : "0"); } catch {} };
+const authStorage = {
+  getItem: (k) => { try { return (remember() ? localStorage : sessionStorage).getItem(k); } catch { return null; } },
+  setItem: (k, v) => { try { (remember() ? localStorage : sessionStorage).setItem(k, v); (remember() ? sessionStorage : localStorage).removeItem(k); } catch {} },
+  removeItem: (k) => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch {} },
+};
+
+/* ── views ── */
+function showLogin() { $("login-view").classList.remove("hidden"); $("app-view").classList.add("hidden"); closeProfile(); }
+function showApp() {
+  $("login-view").classList.add("hidden"); $("app-view").classList.remove("hidden");
+  const name = user?.user_metadata?.full_name || "";
+  const label = name || user?.email || "Dev user";
+  $("avatar").textContent = $("p-avatar").textContent = initials(name || user?.email || "Dev");
+  $("user-name").textContent = label;
+  loadDocs();
+}
+async function signOut() { if (sb) await sb.auth.signOut(); token = null; user = null; showLogin(); }
+
+/* ── login ── */
+$("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("email").value.trim(), password = $("password").value;
+  if (!email || !password) return setStatus($("login-status"), "Enter your email and password.", "err");
+  setRemember($("remember").checked);
+  setStatus($("login-status"), '<span class="spinner"></span>Signing in…');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) return setStatus($("login-status"), error.message === "Invalid login credentials" ? "That email and password don't match." : esc(error.message), "err");
+  token = data.session.access_token; user = data.user; setStatus($("login-status"), ""); $("password").value = ""; showApp();
+});
+$("forgot").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) return setStatus($("login-status"), "Type your email above first, then tap “Forgot password?”.", "err");
+  setStatus($("login-status"), '<span class="spinner"></span>Sending reset link…');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  setStatus($("login-status"), error ? esc(error.message) : "If that email has an account, a reset link is on its way.", error ? "err" : "ok");
+});
+$("logout-top").addEventListener("click", signOut);
+$("logout").addEventListener("click", signOut);
+
+/* ── profile & settings ── */
+function openProfile(recovery = false) {
+  $("profile").classList.remove("hidden");
+  $("p-dev").classList.toggle("hidden", !devMode);
+  recoveryMode = recovery;
+  ["p-name", "save-name", "p-pw0", "p-pw1", "p-pw2", "save-pw", "logout"].forEach((id) => ($(id).disabled = devMode));
+  $("pw0-field").classList.toggle("hidden", recovery);
+  ["p-pw0", "p-pw1", "p-pw2"].forEach((id) => ($(id).value = ""));
+  $("p-email").textContent = user?.email || "Not signed in";
+  $("p-email-input").value = user?.email || "";
+  $("p-name").value = user?.user_metadata?.full_name || "";
+  $("p-remember").checked = remember();
+  $("pw-hint").textContent = recovery ? "You followed a reset link. Choose a new password now (at least 8 characters)." : "Enter your current password, then choose a new one of at least 8 characters.";
+  setStatus($("name-status"), ""); setStatus($("pw-status"), "");
+  if (recovery) setTimeout(() => $("p-pw1").focus(), 50);
+}
+function closeProfile() { $("profile").classList.add("hidden"); }
+$("open-profile").addEventListener("click", () => openProfile());
+$("close-profile").addEventListener("click", closeProfile);
+$("profile").addEventListener("click", (e) => { if (e.target === $("profile")) closeProfile(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("confirm").classList.contains("hidden")) closeProfile(); });
+$("p-remember").addEventListener("change", async (e) => {
+  setRemember(e.target.checked);
+  if (sb) { const { data } = await sb.auth.getSession(); if (data.session) await sb.auth.setSession(data.session); }
+});
+$("save-name").addEventListener("click", async () => {
+  const full_name = $("p-name").value.trim();
+  setStatus($("name-status"), '<span class="spinner"></span>Saving…');
+  const { data, error } = await sb.auth.updateUser({ data: { full_name } });
+  if (error) return setStatus($("name-status"), esc(error.message), "err");
+  user = data.user; setStatus($("name-status"), "Saved.", "ok");
+  $("avatar").textContent = $("p-avatar").textContent = initials(full_name || user.email);
+  $("user-name").textContent = full_name || user.email;
+});
+$("save-pw").addEventListener("click", async () => {
+  const cur = $("p-pw0").value, a = $("p-pw1").value, b = $("p-pw2").value, st = $("pw-status");
+  if (!recoveryMode && !cur) return setStatus(st, "Enter your current password.", "err");
+  if (a.length < 8) return setStatus(st, "Use at least 8 characters for the new password.", "err");
+  if (a !== b) return setStatus(st, "The two new passwords don't match.", "err");
+  if (!recoveryMode && a === cur) return setStatus(st, "The new password must be different from the current one.", "err");
+  $("save-pw").disabled = true;
+  try {
+    if (!recoveryMode) {
+      // Check the current password first (also counts as a fresh sign-in for Supabase's secure password change)
+      setStatus(st, '<span class="spinner"></span>Checking current password…');
+      const { error: e1 } = await sb.auth.signInWithPassword({ email: user.email, password: cur });
+      if (e1) return setStatus(st, "Your current password is incorrect.", "err");
+    }
+    setStatus(st, '<span class="spinner"></span>Updating password…');
+    const { error } = await sb.auth.updateUser({ password: a });
+    if (error) return setStatus(st, esc(error.message), "err");
+    ["p-pw0", "p-pw1", "p-pw2"].forEach((id) => ($(id).value = ""));
+    recoveryMode = false; $("pw0-field").classList.remove("hidden");
+    setStatus(st, "Password updated. Use the new password next time you sign in.", "ok");
+  } finally { $("save-pw").disabled = false; }
+});
+
+/* ── confirm box & toast ── */
+function confirmBox(title, body, okLabel = "Delete") {
+  return new Promise((resolve) => {
+    $("confirm-title").textContent = title; $("confirm-body").textContent = body; $("confirm-ok").textContent = okLabel;
+    $("confirm").classList.remove("hidden"); $("confirm-cancel").focus();
+    const done = (v) => { $("confirm").classList.add("hidden"); $("confirm-ok").onclick = $("confirm-cancel").onclick = $("confirm").onclick = null; document.removeEventListener("keydown", key); resolve(v); };
+    const key = (e) => { if (e.key === "Escape") done(false); };
+    $("confirm-ok").onclick = () => done(true);
+    $("confirm-cancel").onclick = () => done(false);
+    $("confirm").onclick = (e) => { if (e.target === $("confirm")) done(false); };
+    document.addEventListener("keydown", key);
+  });
+}
+let toastTimer;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), 3500); }
+
+/* ── upload with progress ── */
+const drop = $("drop");
+drop.addEventListener("click", () => $("file").click());
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); });
+$("file").addEventListener("change", (e) => { if (e.target.files[0]) upload(e.target.files[0]); e.target.value = ""; });
+function mq() { const m = matchMedia("(max-width:760px)").matches; document.querySelector(".drop-mob").style.display = m ? "inline" : "none"; }
+addEventListener("resize", mq);
+
+function upload(file) {
+  const st = $("upload-status");
+  if (!/\.pdf$/i.test(file.name)) return setStatus(st, "Please choose a PDF file.", "err");
+  setStatus(st, "");
+  const bar = $("progress-bar"), label = $("progress-label"), time = $("progress-time");
+  $("progress").classList.remove("hidden"); $("progress-file").textContent = file.name; drop.disabled = true;
+  const started = Date.now();
+  // Reading speed ~ 4 MB per 30 s on a laptop; used only to animate the reading phase.
+  const expected = Math.max(15, (file.size / (1024 * 1024)) * 9 + 10);
+  let phase = "upload", readStart = 0;
+  const tick = setInterval(() => {
+    const secs = Math.round((Date.now() - started) / 1000);
+    time.textContent = secs + "s";
+    if (phase === "read") {
+      const f = (Date.now() - readStart) / 1000 / expected;          // 0 → 1 over expected time
+      const pct = 30 + 65 * (1 - Math.exp(-2.2 * f));                // eases toward 95%
+      bar.style.width = pct.toFixed(1) + "%";
+      label.textContent = f < 0.8 ? "Reading every page…" : "Saving entries…";
+    }
+  }, 300);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/upload");
+  if (token) xhr.setRequestHeader("Authorization", "Bearer " + token);
+  xhr.upload.onprogress = (e) => { if (e.lengthComputable) { bar.style.width = (30 * e.loaded / e.total).toFixed(1) + "%"; label.textContent = "Uploading " + Math.round(100 * e.loaded / e.total) + "%"; } };
+  xhr.upload.onload = () => { phase = "read"; readStart = Date.now(); };
+  const finish = (ok, msg) => {
+    clearInterval(tick); drop.disabled = false;
+    if (ok) { bar.style.width = "100%"; label.textContent = "Done"; setTimeout(() => $("progress").classList.add("hidden"), 1200); }
+    else $("progress").classList.add("hidden");
+    setStatus(st, msg, ok ? "ok" : "err"); bar.style.width = ok ? "100%" : "0";
+  };
+  xhr.onload = () => {
+    let body = {}; try { body = JSON.parse(xhr.responseText); } catch {}
+    if (xhr.status === 401 && !devMode) { finish(false, "Your session ended. Please sign in again."); return signOut(); }
+    if (xhr.status !== 200) return finish(false, esc(body.detail || "Upload failed (" + xhr.status + ")"));
+    const secs = Math.round((Date.now() - started) / 1000);
+    const check = body.declared_total == null ? "" : body.entries === body.declared_total
+      ? ` All ${body.declared_total} entries captured.` : ` Warning: the statement lists ${body.declared_total} entries but ${body.entries} were read.`;
+    finish(body.status === "parsed", `Read statement ${esc(body.statement_no)} (${esc(title(body.village))}, Sy. ${esc(body.survey)}) in ${secs}s: ${body.entries} entries + ${body.pending} pending, ${body.pages} pages.${check}`);
+    loadDocs();
+  };
+  xhr.onerror = () => finish(false, "Network error. Check your connection and try again.");
+  const fd = new FormData(); fd.append("file", file); xhr.send(fd);
+}
+
+/* ── statements ── */
+async function loadDocs() {
+  try {
+    docsCache = await (await api("/api/documents")).json();
+    const sel = $("doc-filter"), prev = sel.value;
+    sel.innerHTML = '<option value="">All uploaded</option>' + docsCache.map((d) => `<option value="${d.id}">${esc(d.statement_no)} (${esc(title(d.village))})</option>`).join("");
+    sel.value = docsCache.some((d) => d.id === prev) ? prev : "";
+    $("doc-count").textContent = docsCache.length ? `${docsCache.length} statement${docsCache.length === 1 ? "" : "s"}` : "";
+    if (!docsCache.length) { $("docs").innerHTML = '<div class="empty text-muted">Nothing uploaded yet. Upload an encumbrance statement to get started.</div>'; $("doc-last").textContent = ""; return; }
+    $("docs").innerHTML = docsCache.map((d) => {
+      const ok = d.status === "parsed";
+      const period = `${d.period_from ? new Date(d.period_from).getFullYear() : "?"} – ${isoNice(d.period_to)}`;
+      return `<div class="doc-row">
+        <div class="doc-icon"><svg width="20" height="20" fill="none" stroke="var(--color-accent-2-800)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-file"/></svg></div>
+        <div class="doc-grid">
+          <div><div style="font-weight:700;font-size:14px">${esc(d.statement_no)}</div>
+            <div class="text-muted doc-col" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.file_name)}</div>
+            <div class="text-muted doc-sub" style="font-size:12px">${esc(title(d.village))} · Sy. ${esc(d.survey_searched)} · ${period} · ${d.parsed_total} entries${d.parsed_pending ? " + " + d.parsed_pending + " pending" : ""}</div></div>
+          <div class="doc-col"><div class="text-muted k">Village</div><div style="font-size:14px">${esc(title(d.village))}</div></div>
+          <div class="doc-col"><div class="text-muted k">Survey</div><div style="font-size:14px">${esc(d.survey_searched)}</div></div>
+          <div class="doc-col"><div class="text-muted k">Period</div><div style="font-size:14px">${period}</div></div>
+          <div class="doc-col"><div class="text-muted k">Entries</div><div style="font-size:14px">${d.parsed_total} <span class="text-muted">+${d.parsed_pending} pending</span></div></div>
+        </div>
+        <span class="tag ${ok ? "tag-accent-2" : "tag-outline"}" style="padding:5px 12px;font-weight:600">${ok ? "Complete" : "Check count"}</span>
+        <div class="doc-actions">
+          <button class="btn btn-ghost btn-icon" data-search="${d.id}" aria-label="Search this statement" title="Search this statement"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-search"/></svg></button>
+          <button class="btn btn-ghost btn-icon" data-del="${d.id}" aria-label="Delete statement" title="Delete"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trash"/></svg></button>
+        </div></div>`;
+    }).join("");
+    const last = new Date(docsCache[0].uploaded_at);
+    $("doc-last").textContent = "Last upload " + last.toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+    document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
+      const d = docsCache.find((x) => x.id === b.dataset.del);
+      const ok = await confirmBox("Delete this statement?", `Statement ${d?.statement_no || ""} (${title(d?.village)}) and all ${d?.parsed_total ?? ""} of its entries will be removed. You can upload the PDF again later.`);
+      if (!ok) return;
+      const row = b.closest(".doc-row"); row.classList.add("removing");
+      b.innerHTML = '<span class="spinner" style="margin:0"></span>';
+      try {
+        await api("/api/documents/" + b.dataset.del, { method: "DELETE" });
+        row.remove();
+        if (results.some((x) => x.statement_no === d?.statement_no)) hideResults();
+        toast(`Statement ${d?.statement_no || ""} deleted`);
+        loadDocs();
+      } catch (err) {
+        row.classList.remove("removing");
+        b.innerHTML = '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><use href="#i-trash"/></svg>';
+        toast("Couldn't delete: " + err.message);
+      }
+    }));
+    document.querySelectorAll("[data-search]").forEach((b) => b.addEventListener("click", () => {
+      $("doc-filter").value = b.dataset.search; $("search-grid").classList.add("open"); updateMoreHint();
+      document.querySelector("[name=plot]").focus(); document.querySelector("#search-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  } catch (err) { $("docs").innerHTML = `<div class="empty status err">${esc(err.message)}</div>`; }
+}
+
+/* ── search ── */
+function updateMoreHint() {
+  const f = new FormData($("search-form")); const n = ["layout", "deed_category", "date_from", "date_to", "document_id"].filter((k) => String(f.get(k) || "").trim()).length;
+  $("more-hint").textContent = n ? `${n} active` : "Layout, deed, dates";
+}
+$("more-toggle").addEventListener("click", () => $("search-grid").classList.toggle("open"));
+$("search-form").addEventListener("input", updateMoreHint);
+$("search-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const params = new URLSearchParams();
+  for (const [k, v] of new FormData(e.target)) if (String(v).trim()) params.append(k, String(v).trim());
+  const st = $("search-status");
+  setStatus(st, '<span class="spinner"></span>Searching…');
+  try {
+    const r = await (await api("/api/search?" + params)).json();
+    lastQuery = params.toString(); setStatus(st, ""); renderResults(r);
+    if (matchMedia("(max-width:760px)").matches) $("results-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) { setStatus(st, esc(err.message), "err"); hideResults(); }
+});
+$("search-form").addEventListener("reset", () => { setTimeout(updateMoreHint); hideResults(); setStatus($("search-status"), ""); });
+function hideResults() { $("results-card").classList.add("hidden"); $("sticky-dl").classList.add("hidden"); }
+
+function deedTag(x) {
+  if (x.pending || ["rectification", "revocation", "cancellation"].includes(x.category)) return "tag-outline";
+  if (x.category === "sale") return "tag-accent";
+  if (x.category === "gpa" || x.category === "agreement") return "tag-accent-2";
+  return "tag-neutral";
+}
+
+function renderResults(r) {
+  results = r.results; shown = PAGE;
+  const counts = {};
+  results.forEach((x) => (counts[x.layout || "Unknown layout"] = (counts[x.layout || "Unknown layout"] || 0) + 1));
+  const layouts = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  activeLayout = layouts[0]?.[0] || null;
+  const docSel = $("doc-filter");
+  const stmt = docSel.value ? ` in statement ${docSel.options[docSel.selectedIndex].text.split(" ")[0]}` : "";
+  $("results-title").textContent = r.query;
+  $("results-sub").textContent = r.count
+    ? `${r.count} entr${r.count === 1 ? "y" : "ies"} across ${layouts.length} layout${layouts.length === 1 ? "" : "s"}${stmt}.` + (layouts.length > 1 ? " The same plot number in different layouts is a different property." : "")
+    : `No matching entries${stmt}.`;
+  $("chips").innerHTML = layouts.length > 1 ? layouts.map(([l, n]) => `<button class="chip" data-layout="${esc(l)}" aria-pressed="${l === activeLayout}">${esc(l)} · ${n}</button>`).join("") : "";
+  $("chips").querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => {
+    activeLayout = c.dataset.layout; shown = PAGE;
+    $("chips").querySelectorAll(".chip").forEach((o) => o.setAttribute("aria-pressed", o === c)); drawRows();
+  }));
+  document.querySelectorAll(".dl-btn").forEach((b) => (b.disabled = !r.count));
+  $("results-card").classList.remove("hidden");
+  $("sticky-dl").classList.toggle("hidden", !r.count);
+  drawRows();
+}
+
+function drawRows() {
+  const list = results.filter((x) => !activeLayout || (x.layout || "Unknown layout") === activeLayout);
+  const vis = list.slice(0, shown);
+  const linkCell = (x) => x.link_doc ? `<a data-link="${esc(x.link_doc)}" style="white-space:nowrap">${esc(x.link_doc)}</a>` : '<span class="text-muted">—</span>';
+  $("rows").innerHTML = vis.map((x) => `<tr data-doc="${esc(x.doc_no)}">
+    <td><div style="font-weight:700">${esc(x.sl_no.split("/")[0])}</div><div class="text-muted" style="font-size:12px">page ${x.page}</div></td>
+    <td style="white-space:nowrap">${esc(niceDate(x.reg_date))}</td>
+    <td><span class="tag ${deedTag(x)}">${esc(x.deed)}</span>${x.pending ? '<div style="font-size:11px;margin-top:4px;color:var(--danger);font-weight:600">PENDING</div>' : ""}</td>
+    <td style="white-space:nowrap">${esc(x.doc_no)}</td>
+    <td><div style="font-weight:600">${esc(x.plot || "—")}</div><div class="text-muted" style="font-size:12px">${esc(x.extent)}</div></td>
+    <td style="line-height:1.45">${esc(x.executants)}</td>
+    <td style="line-height:1.45;font-weight:600">${esc(x.claimants)}</td>
+    <td class="num">${rupees(x.market_value)}</td>
+    <td class="num" style="font-weight:700">${rupees(x.consideration)}</td>
+    <td>${linkCell(x)}</td></tr>`).join("");
+  $("cards").innerHTML = vis.map((x) => `<div class="entry-card" data-doc="${esc(x.doc_no)}">
+    <div style="display:flex;align-items:center;gap:8px"><span class="tag ${deedTag(x)}">${esc(x.deed)}</span>${x.pending ? '<span class="tag tag-outline">Pending</span>' : ""}
+      <span class="text-muted" style="font-size:12px;margin-left:auto;white-space:nowrap">${esc(niceDate(x.reg_date))}</span></div>
+    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-weight:700;font-size:16px">${esc(x.plot || "No plot")}</span>
+      <span class="text-muted" style="font-size:13px">${esc(x.extent)}</span>
+      <span style="margin-left:auto;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums">${rupees(x.consideration)}</span></div>
+    <div style="font-size:13px;line-height:1.45"><span class="text-muted">To </span><strong>${esc(x.claimants)}</strong></div>
+    <div style="font-size:12px;line-height:1.45;color:var(--color-neutral-700)"><span class="text-muted">From </span>${esc(x.executants)}</div>
+    <div class="entry-foot"><span>Sl. ${esc(x.sl_no.split("/")[0])} · p.${x.page}</span><span>Doc ${esc(x.doc_no)}</span>${x.link_doc ? `<span>Link ${linkCell(x)}</span>` : ""}<span style="margin-left:auto">MV ${rupees(x.market_value)}</span></div>
+  </div>`).join("");
+  const more = list.length - vis.length;
+  $("show-more").classList.toggle("hidden", more <= 0);
+  $("show-more").textContent = `Show ${Math.min(more, PAGE)} more entr${Math.min(more, PAGE) === 1 ? "y" : "ies"}` + (more > PAGE ? ` (${more} left)` : "");
+  document.querySelectorAll("[data-link]").forEach((a) => a.addEventListener("click", () => jumpTo(a.dataset.link)));
+}
+$("show-more").addEventListener("click", () => { shown += PAGE; drawRows(); });
+
+/* clicking a link doc jumps to that earlier deed if it is in these results */
+function jumpTo(doc) {
+  const target = results.find((x) => x.doc_no === doc);
+  if (!target) return setStatus($("search-status"), `Document ${esc(doc)} isn't in these results. Search its plot or party to see it.`, "");
+  activeLayout = target.layout || "Unknown layout";
+  $("chips").querySelectorAll(".chip").forEach((o) => o.setAttribute("aria-pressed", o.dataset.layout === activeLayout));
+  const list = results.filter((x) => (x.layout || "Unknown layout") === activeLayout);
+  shown = Math.max(shown, list.indexOf(target) + 1); drawRows();
+  const mobile = matchMedia("(max-width:760px)").matches;
+  const el = document.querySelector(`${mobile ? "#cards .entry-card" : "#rows tr"}[data-doc="${CSS.escape(doc)}"]`);
+  if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+}
+
+/* ── download ── */
+document.querySelectorAll(".dl-btn").forEach((b) => b.addEventListener("click", async () => {
+  const btns = document.querySelectorAll(".dl-btn");
+  btns.forEach((x) => { x.disabled = true; x.dataset.label = x.innerHTML; x.innerHTML = '<span class="spinner"></span>Preparing…'; });
+  try {
+    const res = await api("/api/report?" + lastQuery);
+    const blob = await res.blob();
+    const name = (res.headers.get("content-disposition") || "").match(/filename="?([^"]+)"?/)?.[1] || "DocAge_Report.docx";
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  } catch (err) { setStatus($("search-status"), esc(err.message), "err"); }
+  btns.forEach((x) => { x.disabled = false; x.innerHTML = x.dataset.label; });
+}));
+
+/* ── start ── */
+(async () => {
+  mq();
+  $("remember").checked = remember();
+  const cfg = await (await fetch("/api/config")).json();
+  devMode = cfg.dev;
+  if (devMode) { $("dev-tag").classList.remove("hidden"); $("logout-top").classList.add("hidden"); user = { email: "dev@localhost", user_metadata: {} }; return showApp(); }
+  sb = supabase.createClient(cfg.supabase_url, cfg.supabase_key, { auth: { storage: authStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  sb.auth.onAuthStateChange((event, session) => {
+    token = session?.access_token || null;
+    if (session) user = session.user;
+    if (event === "PASSWORD_RECOVERY") { showApp(); openProfile(true); }
+  });
+  const { data } = await sb.auth.getSession();
+  if (data.session) { token = data.session.access_token; user = data.session.user; showApp(); } else showLogin();
+})();
+</script>
+</body>
+</html>
